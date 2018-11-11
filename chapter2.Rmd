@@ -1,7 +1,90 @@
-# Insert chapter 2 title here
+# Regression and model validation
 
-*Describe the work you have done this week and summarize your learning.*
+## Data
+Read in the dataset. The dataset has contains 7 variables:
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using  
+* *gender*: Gender: M (Male), F (Female)
+* *age*: Age (in years) derived from the date of birth
+* *attitude*: Global attitude toward statistics
+* *deep*: Deep approach
+* *surf*: Surface approach
+* *stra*: Strategic approach
+* *points*: Exam points
+
+```{r data_reading}
+learning2014 <- read.csv("~/git/IODS-project/data/learning2014.csv")
+```
+
+Check that the data was read correctly. Print out the first few rows and check the type of the columns:
+```{r data_check}
+head(learning2014)
+str(learning2014)
+```
+
+
+Explore the data by plotting
+```{r exploratory_plots, fig.height=12, fig.width=12, warning=F, message=F}
+library(GGally)
+library(ggplot2)
+
+# Define the plot.
+p <- ggpairs(learning2014, mapping = aes(col = gender, alpha=0.3), 
+             lower = list(combo = wrap("facethist", bins = 20)), legend=1)
+
+# Draw the plot
+p
+
+```
+
+There are almost twice as many women in the dataset compared to men. The distribution of *age* is skewed towards higer values. The distribution of *attitutde*, *deep*, *surf*, *stra* and *points* seems to be more normally distributed. The variable with the highest correlation with *points* is *attitude*. 
+
+```{r summaries_of_the_variables}
+summary(learning2014$gender)
+summary(learning2014$age)
+summary(learning2014$attitude)
+summary(learning2014$deep)
+summary(learning2014$surf)
+summary(learning2014$stra)
+summary(learning2014$points)
+
+```
+
+
+##   Regression analysis
+Fit a regression model using **points** as the outcome variable and  **age**, **gender** and **attitude** as explanatory variables:
+
+```{r}
+# Fit the linear regression model
+lm_model <- lm(points ~ age + gender + attitude, data=learning2014)
+
+# Sumamry of the model
+summary(lm_model)
+
+```
+*Gender* and *age* are not significantly associated to the points so remove them from the model.
+Fit the model again using only *attitude* as the explanatory variable.
+
+```{r}
+lm_model_2 <- lm(points ~ attitude, data=learning2014)
+summary(lm_model_2)
+```
+
+Explanatory variable *attitude* is statistically significantly associated to the outcome variable *points* with a p-value of 4.12e-09. The estimate of the regression coefficient is 0.35 meaning a one unit increase in *attitude* is on average associated to a 1.42 unit increase in *points*. The R² of the model is 0.19 which means that the variation of the explanatory variable *attitude* explains 19% of the variation of the outcome variable *points*.
+
+## Diagnostics of the regression model
+Plot the residuals versus the fitted values 
+```{r residuals_fitted_values_plot}
+plot(lm_model_2, which=1)
+```
+
+Plot the normal QQ-plot:
+```{r normal_qq_plot}
+plot(lm_model_2, which=2)
+```
+
+Plot the residuals versus leverage plot:
+```{r residuals_leverage_plot}
+plot(lm_model_2, which=5)
+```
+
+
