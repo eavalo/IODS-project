@@ -1,0 +1,26 @@
+# Logistic regression
+
+## Data
+The dataset has been constructed by joining two student alchol comsuption datasets which were downloaded from https://archive.ics.uci.edu/ml/datasets/Student+Performance. The two datasets contain the same variables and the students are partially overlapping. The data was joined by using following columns as surrogate identifiers for students:
+
+* *school, sex, age, address, famsize, Pstatus, Medu, Fedu, Mjob, Fjob, reason, nursery, internet*
+
+The variables not used for joining have been combined by averaging for numeric columns and by taking the first answer for non-numeric columns. Two new variables have been define:
+
+* *alc_use* is the average of *Dalc* and *Walc*
+* *high_use* is TRUE if *alc_use* is hihger than 2 and FALSE otherwise
+
+Read in the dataset.
+
+```{r data_reading}
+alc <- read.csv("~/git/IODS-project/data/alc.csv")
+```
+
+Variables in the data set:
+```{r data_check}
+str(alc)
+```
+
+## Predictors of high alchol consumption
+
+
