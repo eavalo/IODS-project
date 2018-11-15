@@ -1,7 +1,7 @@
 # Regression and model validation
 
 ## Data
-Read in the dataset. The dataset has contains 7 variables:
+Read in the dataset. The dataset contains 7 variables:
 
 * *gender*: Gender: M (Male), F (Female)
 * *age*: Age (in years) derived from the date of birth
