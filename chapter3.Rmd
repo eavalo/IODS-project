@@ -12,12 +12,12 @@ The variables not used for joining have been combined by averaging for numeric c
 
 Read in the dataset.
 
-```{r data_reading}
+```{r data_reading_e3}
 alc <- read.csv("~/git/IODS-project/data/alc.csv")
 ```
 
 Variables in the data set:
-```{r data_check}
+```{r data_check_e3}
 str(alc)
 ```
 
