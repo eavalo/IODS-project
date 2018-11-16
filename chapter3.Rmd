@@ -84,3 +84,19 @@ Based on the plots my assumptions seem to be somewhat corret:
 * High alchol use is more common in men compared to women
 * Low alchol use is more common in individuals in romatic relationships
 
+### Fitting a logistic regression model
+
+Fit a logistic regression model using *high_use* as the targe variable and *goout*, *studytime*, *sex* and *romantic* as the explanatory variables.
+
+```{r logistic_regression_3}
+
+# Fit the logistic regression model
+m <- glm(high_use ~ goout + studytime + sex + romantic, data = alc, family = "binomial")
+
+# Summary of the model
+summary(m)
+
+# Coefficients of the model
+coef(m)
+```
+

@@ -424,6 +424,45 @@ grid.arrange(g_goout, g_studytime, g_sex, g_romantic, ncol=2, nrow=2)</code></pr
 <li>High alchol use is more common in men compared to women</li>
 <li>Low alchol use is more common in individuals in romatic relationships</li>
 </ul>
+</div>
+<div id="fitting-a-logistic-regression-model" class="section level3">
+<h3>Fitting a logistic regression model</h3>
+<p>Fit a logistic regression model using <em>high_use</em> as the targe variable and <em>goout</em>, <em>studytime</em>, <em>sex</em> and <em>romantic</em> as the explanatory variables.</p>
+<pre class="r"><code># Fit the logistic regression model
+m &lt;- glm(high_use ~ goout + studytime + sex + romantic, data = alc, family = &quot;binomial&quot;)
+
+# Summary of the model
+summary(m)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = high_use ~ goout + studytime + sex + romantic, 
+##     family = &quot;binomial&quot;, data = alc)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.7365  -0.8114  -0.5009   0.9081   2.6642  
+## 
+## Coefficients:
+##             Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)  -2.6988     0.5712  -4.725 2.30e-06 ***
+## goout         0.7536     0.1187   6.350 2.15e-10 ***
+## studytime    -0.4774     0.1683  -2.837  0.00456 ** 
+## sexM          0.6657     0.2585   2.576  0.01000 *  
+## romanticyes  -0.1424     0.2699  -0.528  0.59767    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 465.68  on 381  degrees of freedom
+## Residual deviance: 393.67  on 377  degrees of freedom
+## AIC: 403.67
+## 
+## Number of Fisher Scoring iterations: 4</code></pre>
+<pre class="r"><code># Coefficients of the model
+coef(m)</code></pre>
+<pre><code>## (Intercept)       goout   studytime        sexM romanticyes 
+##  -2.6987888   0.7535667  -0.4773856   0.6657228  -0.1424332</code></pre>
 <hr />
 </div>
 </div>
