@@ -111,3 +111,53 @@ cbind(or, ci)
 From the odds ratios we can see that one unit increase in *goout* is associated with 2.1 times higher likelihood of high alchohol comsumption and one unit increase in *studytime* is associated with 0.6 times lower likelihood of high alcohol comsumption. Male gender is associated with 1.9 higer likelihood of high alcohol comsumption comapred to female gender. Being in a romatic relationship is not significantly associated to high/low alcohol comsuption in this model since the confidence intervals include 1.
 
 My previously stated hypothesis seem to be verified by this model except that *romantic* is not associated to high or low alcohol comsumption in this model.
+
+#### Performance of the model
+Fit a logistic model with the explanatory variables that were statistically significantly associated to high or low alchohol consumption:
+
+```{r}
+# Fit the logistic regression model
+m <- glm(high_use ~ goout + studytime + sex, data = alc, family = "binomial")
+```
+
+Prediction performance of the model
+
+```{r}
+# Calcualte the predicted probabilities of high alcohol comspumtion
+probability <- predict(m, type="response")
+alc <- mutate(alc, probability=probability)
+# Predict the high alcohol use with the probabilities
+alc <- mutate(alc, prediction=probability > 0.5)
+# Cross-tabulate the actual class and the predicted class
+table(high_use = alc$high_use, prediction = alc$prediction)
+
+```
+The model seems to be quite good at predicting low alcohol use but performes less well in predicting high alcohol use.
+
+Visualize the actual class, the predicted probabilities and the predicted class.
+
+```{r}
+# Initialize a plot of 'high_use' versus 'probability' in 'alc'
+g <- ggplot(alc, aes(x = probability, y = high_use, col=prediction))
+
+# define the geom as points and draw the plot
+g + geom_point()
+
+```
+
+Calculate the total proportion of mis-classified individuals using the regression model and with a simple guessing strategy where everyone is classified to be in the most prevalent class low use of alcohol.
+```{r}
+# Define a loss function (mean prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+# Call loss_func to compute the average number of wrong predictions in the (training) data
+loss_func(class = alc$high_use, prob = alc$probability)
+
+# Compare the results to guessing that everybody belongs to the class low use of alcohol
+loss_func(class = alc$high_use, prob = 0)
+```
+Using the regression model 24.6% of the individuals are mis-classified compared to 29.8 % of mis-classified individuals when simply guessing everybody belongs to the low use of alcohol class. The model seems to provide some improvement to the simple guess of the most prevalent class.
+
