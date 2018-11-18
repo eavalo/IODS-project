@@ -112,7 +112,7 @@ From the odds ratios we can see that one unit increase in *goout* is associated 
 
 My previously stated hypothesis seem to be verified by this model except that *romantic* is not associated to high or low alcohol comsumption in this model.
 
-#### Performance of the model
+### Performance of the model
 Fit a logistic model with the explanatory variables that were statistically significantly associated to high or low alchohol consumption:
 
 ```{r}
@@ -160,4 +160,69 @@ loss_func(class = alc$high_use, prob = alc$probability)
 loss_func(class = alc$high_use, prob = 0)
 ```
 Using the regression model 24.6% of the individuals are mis-classified compared to 29.8 % of mis-classified individuals when simply guessing everybody belongs to the low use of alcohol class. The model seems to provide some improvement to the simple guess of the most prevalent class.
+
+### Cross-validation of the model
+Performe 10-fold cross-validation of the model to estiamte the performance of the model on unseen data. The performance of the model is measured with proportion of mis-classified individuals. The mean prediction error in the test set:
+
+```{r}
+library(boot)
+# 10-fold cross-validation
+cv <- cv.glm(data = alc, cost = loss_func, glmfit = m, K = 10)
+# Mean prediction error
+cv$delta[1]
+```
+The mean prediction error in the test set is 0.25 which is better than the performance of the model introduced in the DataCamp exercises which had a mean prediction error of 0.26 in the test set.
+
+
+### Models with different number of predictors
+Construct models with different number of predictors and calculate the test set and training set prediction errors.
+
+```{r}
+# All the possible predictors
+predictors <- c('school', 'sex', 'age', 'address', 'famsize', 'Pstatus', 'Medu',
+                'Fedu', 'Mjob', 'Fjob', 'reason', 'nursery', 'internet', 'guardian',
+                'traveltime', 'studytime', 'failures', 'schoolsup', 'famsup', 'paid',
+                'activities', 'higher', 'romantic', 'famrel', 'freetime', 'goout',
+                'health', 'absences', 'G1', 'G2', 'G3')
+
+
+# Fit several models and record the test and traingin errors
+# 1) Use all of the predictors.
+# 2) Drop one predictor and fit a new model.
+# 3) Continue until only one predictor is left in the model.
+
+
+# Fit the models and calculate the erros
+test_error <- numeric(length(predictors))
+training_error <- numeric(length(predictors))
+
+for(i in length(predictors):1) {
+  model_formula <- paste0("high_use ~ ", paste(predictors[1:i], collapse = " + "))
+  glmfit <- glm(model_formula, data = alc, family = "binomial")
+
+  # 10-fold cross-validation
+  cv <- cv.glm(data = alc, cost = loss_func, glmfit = m, K = 10)
+  # Mean prediction error
+  test_error[i] <- cv$delta[1]
+  # Training error
+  training_error[i] <- 
+    loss_func(alc$high_use, predict(glmfit,type="response"))
+}
+
+# Construct a table of prediction errors for plotting
+data_error <- rbind(data.frame(n_predictors=1:length(predictors),
+                               prediction_error=test_error,
+                               type = "test error"),
+                    data.frame(n_predictors=1:length(predictors),
+                               prediction_error=training_error,
+                               type = "training error"))
+
+                    
+# Plot the test and training errors vs. number of predictors in the model
+g <- ggplot(data_error, aes(x = n_predictors, y = prediction_error, col=type))
+
+# define the geom as points and draw the plot
+g + geom_point()
+
+```
 
