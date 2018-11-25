@@ -50,7 +50,7 @@ library(ggplot2)
 
 # Define the plot.
 p <- ggpairs(Boston, mapping = aes(alpha=0.3), 
-             lower = list(combo = wrap("facethist", bins = 20)), legend=1)
+             lower = list(combo = wrap("facethist", bins = 20)))
 
 # Draw the plot
 p
@@ -150,3 +150,96 @@ table(correct = correct_classes, predicted = lda.pred$class)
 ```
 
 Model seems to perform perfectly at predicting the 'high' class and also predicts the other classes reasonably well. The prediction accuracy is worst for the 'low' class. The model mis-classifies a big proportion of the 'low' observations as 'med_low'.
+
+## K-means clustering
+
+Reload the Boston dataset and standardize it as before. Calculate the Euclidean distance between the observations:
+
+```{r}
+# Load the Boston dataset
+data("Boston")
+
+# Scale the dataset
+boston_scaled <- scale(Boston) %>% as.data.frame()
+
+# Calculate the Euclidean distance between the pairs of observations
+dist_eu <- dist(boston_scaled)
+summary(dist_eu)
+```
+
+Run the k-means algorithm with 3 clusters and visualize the results:
+```{r fig.height=12, fig.width=12}
+# Set seed to get reproducible results
+set.seed(123)
+
+# k-means clustering
+km <-kmeans(boston_scaled, centers = 3)
+
+# plot the Boston dataset with clusters
+pairs(boston_scaled, col = km$cluster)
+
+```
+Calculate te total of within cluster sum of squares (TWCSS) when the number of cluster changes from 1 to 10. 
+
+```{r}
+# Set seed to get reproducible results
+set.seed(123)
+
+# Determine the number of clusters
+k_max <- 10
+
+# Calculate the total within sum of squares
+twcss <- sapply(1:k_max, function(k){kmeans(boston_scaled, k)$tot.withinss})
+
+# visualize the results
+qplot(x = 1:k_max, y = twcss, geom = 'line')
+```
+
+The optimal number of clusters is when the total WCSS drops radically so based on the graph 2 seems to be the optimal number of clusters. Perform k-means with 2 clusters and visualize the results.
+
+```{r fig.width=12, fig.height=12}
+# Set seed to get reproducible results
+set.seed(123)
+
+# k-means clustering
+km <-kmeans(boston_scaled, centers = 2)
+
+# plot the Boston dataset with clusters
+pairs(boston_scaled, col = km$cluster)
+
+```
+
+
+## LDA of the k-means clusters
+
+Perform k-means clustering with 3 clusters on the scaled Boston datset. Use the cluster asigments as the target variable for LDA analysis.
+```{r}
+# Set seed to get reproducible results
+set.seed(123)
+
+# k-means clustering
+km <-kmeans(boston_scaled, centers = 3)
+
+# Add the cluster assingment to the dataset
+boston_scaled$kmeans_cluster <- km$cluster
+
+# linear discriminant analysis
+lda.fit <- lda(kmeans_cluster ~ ., data = boston_scaled)
+```
+
+The LDA biplot:
+```{r}
+# plot the lda results
+plot(lda.fit, dimen = 2, col=boston_scaled$kmeans_cluster, 
+     pch=boston_scaled$kmeans_cluster)
+lda.arrows(lda.fit, myscale = 2)
+
+```
+
+Based on the biplot the most influencal linear separators are:
+
+* *age* - proportion of owner-occupied units built prior to 1940.
+* *dis* - weighted mean of distances to five Boston employment centres.
+* *rad* - index of accessibility to radial highways.
+* *tax* - full-value property-tax rate per $10,000.
+
