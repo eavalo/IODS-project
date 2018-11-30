@@ -1,0 +1,129 @@
+# Dimensionality reduction techniques
+
+```{r message=FALSE}
+# Load libraries
+library(corrplot)
+library(dplyr)
+```
+
+
+## Data
+
+Load the dataset from file.
+
+```{r}
+human <- read.csv('data/human.csv', row.names = 1)
+head(human)
+str(human)
+```
+
+The dataset contains 155 observation of 8 variables. The dataset combines several indicators from most countries in the world. The countries are the rownames of the data.frame and the variables are:
+
+**Health and knowledge**
+ 
+* *GNI* - Gross National Income per capita
+* *Life.Exp* - Life expectancy at birth
+* *Edu.Exp* - Expected years of schooling 
+* *Mat.Mor* - Maternal mortality ratio
+* *Ado.Birth* - Adolescent birth rate
+
+**Empowerment**
+ 
+* *Parli.F* - Percetange of female representatives in parliament
+* *Edu2.FM* - Ratio of females/males with at least secondary education
+* *Labo.FM* - Ratio of females/males in the labour force
+
+## Data exploration
+
+Visualize the distribution of the variabels and their depencies
+
+```{r fig.height=12, fig.width=12, fig.cap="Figure 1. Pairs-plot of the variables in the dataset.", warning=F, message=F}
+library(GGally)
+library(ggplot2)
+
+# Define the plot.
+p <- ggpairs(human, mapping = aes(alpha=0.3), 
+             lower = list(combo = wrap("facethist", bins = 20)))
+
+# Draw the plot
+p
+
+```
+
+Next visualize the correlation between the variables
+
+```{r fig.cap="Figure 2. Correlation of the variables in the dataset."}
+cor(human) %>% corrplot()
+```
+
+Summaries of the variables
+
+```{r}
+summary(human)
+```
+
+## Principal component analysis
+
+Perform principal component analysis (PCA) using singular value decomposition (SVD) method for un-standardized dataset. The variability captured by the principal components:
+
+```{r}
+
+# perform principal component analysis (with the SVD method)
+pca_human <- prcomp(human)
+
+# create and print out a summary of pca_human
+s <- summary(pca_human)
+s
+```
+
+
+```{r fig.height=12, fig.width=12, fig.cap="Figure 3. Countries plotted againts the two first principal components for the un-standardized dataset.", warning=F}
+# rounded percentages of variance captured by each PC
+pca_pr <- round(100*s$importance[2,], digits = 1) 
+
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+
+# draw a biplot of the principal component representation and the original variables
+biplot(pca_human, choices = 1:2, cex=c(0.7,1), col=c("grey40", "deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2])
+```
+
+
+Next, standardize the dataset so that every variable has a mean of 0 and a standard deviation of 1 and perform PCA on the standardized dataset. The summary for the standardized variables
+
+```{r}
+# standardize the variables
+human_std <- scale(human)
+
+# print out summaries of the standardized variables
+summary(human_std)
+```
+
+The variability captured by the principal components
+```{r}
+# perform principal component analysis (with the SVD method)
+pca_human_std <- prcomp(human_std)
+
+# create and print out a summary of pca_human
+s <- summary(pca_human_std)
+s
+```
+
+```{r fig.height=12, fig.width=12, fig.cap="Figure 4. Countries plotted againts the two first principal components for the standardized dataset. "}
+# rounded percentages of variance captured by each PC
+pca_pr <- round(100*s$importance[2,], digits = 1) 
+
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+
+# draw a biplot of the principal component representation and the original variables
+biplot(pca_human_std, choices = 1:2, cex=c(0.7,1), col=c("grey40", "deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2])
+```
+
+The expected years of education, life expectancy, gross-domestic product and the ratio of women to men in education seem to correlate with each other as well as PC1. Maternal mortality and adolescent birth rates are inversly correlated to the former variables and also correlated with PC1. The ratio of women to men in the work life is correlated with the fraction of women in the parliament and this is correlated with PC2.
+
+The first pricipal component seems to separate the countries based on variables related to health, education and wealth. The second pricipal component captures the variability in the participation of women to work and polital life in the society.
+
+## Tea dataset: Multiple Corresondence Analysis
+
+
