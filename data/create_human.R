@@ -171,4 +171,4 @@ dim(human)
 setwd("~/git/IODS-project/")
 
 # Write dataset to file
-write.csv(human, "data/human.csv", row.names = FALSE)
+write.csv(human, "data/human.csv", row.names = TRUE)
