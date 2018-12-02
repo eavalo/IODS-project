@@ -38,7 +38,7 @@ The dataset contains 155 observation of 8 variables. The dataset combines severa
 
 Visualize the distribution of the variabels and their depencies
 
-```{r fig.height=12, fig.width=12, fig.cap="Figure 1. Pairs-plot of the variables in the dataset.", warning=F, message=F}
+```{r fig.height=12, fig.width=12, fig.cap="Figure: Pairs-plot of the variables in the dataset.", warning=F, message=F}
 library(GGally)
 library(ggplot2)
 
@@ -50,12 +50,14 @@ p <- ggpairs(human, mapping = aes(alpha=0.3),
 p
 
 ```
+Most of the variables have very skewed distributions such *Lif.Exp* and *GNI*. Only *Edu.Exp* seems to be almost normally distributed.
 
 Next visualize the correlation between the variables
 
-```{r fig.cap="Figure 2. Correlation of the variables in the dataset."}
+```{r fig.cap="Figure: Correlation of the variables in the dataset."}
 cor(human) %>% corrplot()
 ```
+There is a group of highly correlated variables: *Edu.Exp*, *Lif.Exp*, *GNI*, *Mat.Mor*, *Ado.Birth*. For example *Edu.Exp* and *Lif.Exp* are positively correlated and *Edu.Exp* and *Mat.Mor* are negatively correlated.
 
 Summaries of the variables
 
@@ -78,7 +80,8 @@ s
 ```
 
 
-```{r fig.height=12, fig.width=12, fig.cap="Figure 3. Countries plotted againts the two first principal components for the un-standardized dataset.", warning=F}
+```{r fig.height=12, fig.width=12, fig.cap="Figure: Countries plotted againts the two first principal components for the un-standardized dataset. Gross national income per capita (*GNI*) seems to explain most of the variation in the dataset. This follows from the fact that the values of the *GNI* variable are much larger than the other variables and that is why it dominates in the PCA analysis of the un-standardized dataset.", warning=F}
+
 # rounded percentages of variance captured by each PC
 pca_pr <- round(100*s$importance[2,], digits = 1) 
 
@@ -121,7 +124,7 @@ pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
 biplot(pca_human_std, choices = 1:2, cex=c(0.7,1), col=c("grey40", "deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2])
 ```
 
-The expected years of education, life expectancy, gross-domestic product and the ratio of women to men in education seem to correlate with each other as well as PC1. Maternal mortality and adolescent birth rates are inversly correlated to the former variables and also correlated with PC1. The ratio of women to men in the work life is correlated with the fraction of women in the parliament and this is correlated with PC2.
+The expected years of education, life expectancy at birth, gross national income per capita and the ratio of women to men with at least secondary education seem to correlate with each other as well as PC1. Maternal mortality and adolescent birth rates are inversly correlated to the former variables and also correlated with PC1. The ratio of women to men in the labor force is correlated with the percentage of women representatives in the parliament and this is correlated with PC2.
 
 The first pricipal component seems to separate the countries based on variables related to health, education and wealth. The second pricipal component captures the variability in the participation of women to work and polital life in the society.
 
@@ -135,7 +138,7 @@ str(tea)
 ```
 
 The dataset contains 300 observations of 36 variables. Visualize the dataset:
-```{r fig.height=12, fig.width=12, fig.cap="Figure 4. Variables and the distribution of their values in the 'tea' dataset.", warning=F}
+```{r fig.height=12, fig.width=12, fig.cap="Figure: Variables and the distribution of their values in the 'tea' dataset.", warning=F}
 # visualize the dataset
 gather(tea) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10))
 ```
@@ -159,7 +162,7 @@ The first dimension explains 15% of the variation and the second dimension 14% v
 
 Visualize the MCA results:
 
-```{r fig.height=12, fig.width=12, fig.cap=paste0("Figure 5. Variable biplot of the MCA analysis results on the 'tea' dataset with variables *", paste0(keep_columns, collapse='*, *'), "*.")}
+```{r fig.height=12, fig.width=12, fig.cap=paste0("Figure: Variable biplot of the MCA analysis results on the 'tea' dataset with variables *", paste0(keep_columns, collapse='*, *'), "*.")}
 
 # Visualize MCA
 plot(mca, invisible=c("ind"), habillage= "quali")
