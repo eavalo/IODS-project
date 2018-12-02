@@ -4,6 +4,7 @@
 # Load libraries
 library(corrplot)
 library(dplyr)
+library(tidyr)
 ```
 
 
@@ -126,4 +127,41 @@ The first pricipal component seems to separate the countries based on variables 
 
 ## Tea dataset: Multiple Corresondence Analysis
 
+Load the 'tea' dataset from the package FactoMineR. The dataset represents a questionnaire on tea made in 300 inviduals: how they drink tea (18 questions), what are their product's perception (12) and some personal details. The structure of the dataset: 
+```{r}
+library("FactoMineR")
+data(tea)
+str(tea)
+```
 
+The dataset contains 300 observations of 36 variables. Visualize the dataset:
+```{r fig.height=12, fig.width=12, fig.cap="Figure 4. Variables and the distribution of their values in the 'tea' dataset.", warning=F}
+# visualize the dataset
+gather(tea) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10))
+```
+
+Perform multiple correspondance analysis (MCA) on the dataset using a subset of variables: *Tea*, *How*, *how*, *sugar*, *where*, *lunch*:
+
+```{r}
+# Column names to keep in the dataset
+keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch")
+
+# Select the 'keep_columns' to create a new dataset
+tea_time <- dplyr::select(tea, one_of(keep_columns))
+
+# Multiple correspondence analysis
+mca <- MCA(tea_time, graph = FALSE)
+
+# Summary of the model
+summary(mca)
+```
+The first dimension explains 15% of the variation and the second dimension 14% variation in the data. Variables *how* and *where* have the strongest link to the first and second dimension out of all the analyzed variables.
+
+Visualize the MCA results:
+
+```{r fig.height=12, fig.width=12, fig.cap=paste0("Figure 5. Variable biplot of the MCA analysis results on the 'tea' dataset with variables *", paste0(keep_columns, collapse='*, *'), "*.")}
+
+# Visualize MCA
+plot(mca, invisible=c("ind"), habillage= "quali")
+```
+Based on the plot individuals who use unpackaged tea also tend to buy their tea from the tea shops and prefer green tea. On the other individuals who use tea bags buy them often from chain stores.
