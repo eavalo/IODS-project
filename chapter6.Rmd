@@ -16,12 +16,15 @@ library(ggplot2)
 ## BPRS dataset
 In the BPRS dataset 40 male subjects were randomly assigned to one of two treatment groups and each subject was rated on the brief psychiatric rating scale (BPRS) measured before treatment began (week 0) and then at weekly intervals for eight weeks. The BPRS assesses the level of 18 symptom constructs such as hostility, suspiciousness, hallucinations and grandiosity; each of these is rated from one (not present) to seven (extremely severe). The scale is used to evaluate patients suspected of having schizophrenia.
 
-Prepare the data set:
-```{r echo=T, results='hide'}
-# Prepare the data
-source("data/meet_and_repeat.R")
-```
-```{r }
+Read in the dataset:
+```{r}
+# Read in the data
+BPRSL <- read.csv("data/BPRSL.csv")
+
+# BPRS: factor treatment & subject
+BPRSL$treatment <- factor(BPRSL$treatment)
+BPRSL$subject <- factor(BPRSL$subject)
+
 # Structure of the data
 str(BPRSL)
 ```
@@ -149,8 +152,13 @@ The baseline *bprs* value might be correlated with the chosen summary measure. L
 
 ```{r}
 # Add the baseline from the original data as a new variable to the summary data
+baseline <- BPRSL %>% 
+  filter(week == 0) %>% 
+  rename(baseline=bprs) %>%
+  dplyr::select(one_of(c("treatment", "subject", "baseline")))
+
 BPRSL8S2 <- BPRSL8S %>%
-  mutate(baseline = BPRS$week0)
+  left_join(baseline)
 
 # Fit the linear model with the mean as the response 
 fit <- lm(mean ~ treatment + baseline, data = BPRSL8S2)
@@ -165,7 +173,17 @@ The baseline *bprs* values is strongly associated to the *bprs* values taken aft
 
 The RATS dataset comes from a nutrition study conducted in three groups of rats. The groups were put on different diets, and each animal’s body weight (grams) was recorded repeatedly (approximately) weekly, except in week seven when two recordings were taken) over a 9-week period.
 
+Read in the dataset:
+
 ```{r}
+# Read in the data
+RATSL <- read.csv("data/RATSL.csv")
+
+# RATS: factor ID & Group
+RATSL$ID <- factor(RATSL$ID)
+RATSL$Group <- factor(RATSL$Group)
+
+# Structure of the data
 str(RATSL)
 ```
 
@@ -229,6 +247,7 @@ summary(RATS_ref1)
 From the summary of the model we see that the using the random intercept and random slope model the rats in groups 2 and 3 are heavier than rats in group 1 and that the weight of the rats seems to go down on average.
 
 Compare the random intercept and random intercept and slope models by performing likelihood ratio test:
+
 ```{r}
 # perform an ANOVA test on the two models
 anova(RATS_ref1, RATS_ref)
