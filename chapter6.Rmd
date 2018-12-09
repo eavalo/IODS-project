@@ -1,0 +1,280 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+# Analysis of longitudinal data
+
+```{r message=FALSE}
+# Load libraries
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+
+## BPRS dataset
+In the BPRS dataset 40 male subjects were randomly assigned to one of two treatment groups and each subject was rated on the brief psychiatric rating scale (BPRS) measured before treatment began (week 0) and then at weekly intervals for eight weeks. The BPRS assesses the level of 18 symptom constructs such as hostility, suspiciousness, hallucinations and grandiosity; each of these is rated from one (not present) to seven (extremely severe). The scale is used to evaluate patients suspected of having schizophrenia.
+
+Prepare the data set:
+```{r echo=T, results='hide'}
+# Prepare the data
+source("data/meet_and_repeat.R")
+```
+```{r }
+# Structure of the data
+str(BPRSL)
+```
+
+
+Plot the *bprs* values over time for each 40 individuals by treatment group: 
+```{r}
+# Draw the plot
+ggplot(BPRSL, aes(x = week, y = bprs, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  theme(legend.position = "none") +
+  scale_y_continuous(limits = c(min(BPRSL$bprs), max(BPRSL$bprs)))
+```
+
+The BPRS score seems to decrease over time as well as the variability of the score in both treatment groups.
+
+Next, standaridize the scores for each time point by substracting the mean *bprs* for a given time point for all the values at that time point and dividing by the standard deviation of *bprs* at that time point.
+```{r}
+# Standardise the variable bprs
+BPRSL <- BPRSL %>%
+  group_by(week) %>%
+  mutate(stdbprs = scale(bprs)) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(BPRSL)
+```
+
+Plot standardized *bprs* values:
+```{r}
+# Plot again with the standardised bprs
+ggplot(BPRSL, aes(x = week, y = stdbprs, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  scale_y_continuous(name = "standardized bprs")
+```
+
+Next plot the mean *bprs* for each time point for the two different treatment groups and also add the standard error of the mean to the plots:
+
+$$se = \frac{sd(x)}{\sqrt{n}}$$
+
+```{r}
+# Mean profiles
+################
+
+# Number of weeks, baseline (week 0) included
+n <- BPRSL$week %>% unique() %>% length()
+
+# Summary data with mean and standard error of bprs by treatment and week 
+BPRSS <- BPRSL %>%
+  group_by(treatment, week) %>%
+  summarise(mean = mean(bprs), se = sd(bprs)/sqrt(n) ) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(BPRSS)
+
+# Plot the mean profiles
+ggplot(BPRSS, aes(x = week, y = mean, linetype = treatment, shape = treatment)) +
+  geom_line() +
+  scale_linetype_manual(values = c(1,2)) +
+  geom_point(size=3) +
+  scale_shape_manual(values = c(1,2)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, linetype="1"), width=0.3) +
+  theme(legend.position = c(0.8,0.8)) +
+  scale_y_continuous(name = "mean(bprs) +/- se(bprs)")
+```
+
+The mean profiles seem to overlap completly when taking the strandard errors of the mean estimates into account. This suggests there is only a small difference between the treatment groups when looking at the mean profiles.
+
+Compare the mean *bprs* values between the treatment groups on weeks 1-8 by plotting the distribution of the mean *bprs* values for the two groups:
+```{r}
+# Create a summary data by treatment and subject with mean as the summary variable (ignoring baseline week 0).
+BPRSL8S <- BPRSL %>%
+  filter(week > 0) %>%
+  group_by(treatment, subject) %>%
+  summarise(mean=mean(bprs)) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(BPRSL8S)
+
+# Draw a boxplot of the mean versus treatment
+ggplot(BPRSL8S, aes(x = treatment, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(bprs), weeks 1-8")
+```
+
+There seems to be an outlier in group 2 with a mean *bprs* value over 70. This might bias the results so remove it and plot again:
+
+
+```{r}
+
+BPRSL8S1 <- BPRSL %>%
+  filter(week > 0) %>%
+  group_by(treatment, subject) %>%
+  summarise(mean=mean(bprs)) %>%
+  ungroup() %>%
+  filter(mean < 70)
+
+# Draw a boxplot of the mean versus treatment
+ggplot(BPRSL8S1, aes(x = treatment, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(bprs), weeks 1-8")
+
+```
+
+Based on the plot it looks like the mean *brps* is a bit lower in the treatment group 2 but the difference is small compared to the variation of the mean *bprs* inside the treatment groups.
+
+Let's perform a t-test comparing the mean *bprs* values between the treatment groups:
+
+```{r}
+# Perform a two-sample t-test
+t.test(mean ~ treatment, data = BPRSL8S1, var.equal = TRUE)
+```
+
+There is no statistically significant difference between the groups which is indicated also by the 95% confidence interval which includes the zero.
+
+The baseline *bprs* value might be correlated with the chosen summary measure. Let's add that to our model to see if that will affect the difference between the treatment groups:
+
+```{r}
+# Add the baseline from the original data as a new variable to the summary data
+BPRSL8S2 <- BPRSL8S %>%
+  mutate(baseline = BPRS$week0)
+
+# Fit the linear model with the mean as the response 
+fit <- lm(mean ~ treatment + baseline, data = BPRSL8S2)
+
+# Compute the analysis of variance table for the fitted model with anova()
+anova(fit)
+```
+
+The baseline *bprs* values is strongly associated to the *bprs* values taken after treatment has begun, but there is still no evidence of a treatment difference even after conditioning on the baseline value.
+
+## RATS dataset
+
+The RATS dataset comes from a nutrition study conducted in three groups of rats. The groups were put on different diets, and each animal’s body weight (grams) was recorded repeatedly (approximately) weekly, except in week seven when two recordings were taken) over a 9-week period.
+
+```{r}
+str(RATSL)
+```
+
+Plot the RATSL dataset:
+```{r}
+
+# Plot the RATSL data
+ggplot(RATSL, aes(x = Time, y = Weight, group = ID)) +
+  geom_line(aes(linetype = Group)) +
+  scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 10)) +
+  scale_y_continuous(name = "Weight (grams)") +
+  theme(legend.position = "top")
+
+```
+
+The weight of the rats in group 1 is lower at the start of the follow-up compared to the rats in groups 2 and 3 and stays lower during the follow-up.
+
+### Linear regression model
+Let's fit a linear regression model where *Weight* is the outcome variable and *Group* and *Time* are the explanatory variables:
+
+$$Weight \sim Group + Time$$.
+
+Here we are assuming the repeated measures of the same animal to be independent which is highly unlikely.
+
+
+```{r}
+# create a regression model RATS_reg
+RATS_reg <- lm(Weight ~ Time + Group, data=RATSL)
+
+# print out a summary of the model
+summary(RATS_reg)
+```
+
+From the summary of the model we can see that weight is statistically significantly higher in groups 2 and 3 compared to group 1. Also, the regression coeffiecient of time is smaller than one and statistically siginifcant so the weight of the animals seems to go down on average during the follow-up.
+
+### Linear mixed-effects models
+
+Let's fit a random intercept model using the same two explanatory variables: *Time* and *Group*. To allow the rats to have a different weight at the start of the follow-up we use the identiy of the rats as the random effect. Fitting a random intercept model allows the linear regression fit for each rat to differ in intercept from other rats.
+
+```{r message=FALSE}
+# access library lme4
+library(lme4)
+
+# Create a random intercept model
+RATS_ref <- lmer(Weight ~ Time + Group + (1 | ID), data = RATSL, REML = FALSE)
+
+# Print the summary of the model
+summary(RATS_ref)
+```
+From the summary of the model we can see that even after allowing different weight of the rats at start of the follow-up the rats are heawier in groups 2 and 3 compared to group 1 and the weight of the rats seems to decrease during the follow-up.
+
+Next, add random slope to the model of the rat growth data. Using a random intercept and random slope model allows the linear regression fits for each rat to differ in intercept and slope. This way it is possible to take into account that the rats start with different weights and their weights might change overtime with different rates but also to analyse the effect of time in general to the change of weight.
+
+```{r}
+# create a random intercept and random slope model
+RATS_ref1 <- lmer(Weight ~ Time + Group + (Time | ID), data = RATSL, REML = FALSE)
+
+# print a summary of the model
+summary(RATS_ref1)
+```
+From the summary of the model we see that the using the random intercept and random slope model the rats in groups 2 and 3 are heavier than rats in group 1 and that the weight of the rats seems to go down on average.
+
+Compare the random intercept and random intercept and slope models by performing likelihood ratio test:
+```{r}
+# perform an ANOVA test on the two models
+anova(RATS_ref1, RATS_ref)
+```
+The p-value is highly significant and the log-likelihood of the random intercept and random slope is greates than that of the random slope model indicating that it fits the data better (the fit is better the closer to 0 the log-likelihood of the model is).
+
+To test if the growth profiles of the rats differ between the groups we will fit a random intercept and slope model that allows for a *Group* × *Time* interaction.
+
+```{r}
+# create a random intercept and random slope model with the interaction
+RATS_ref2 <- lmer(Weight ~ Time + Group + Time * Group + (Time | ID), data = RATSL, REML = FALSE)
+
+# print a summary of the model
+summary(RATS_ref2)
+```
+
+From the summary we can see that the interaction of time and weight is stronger in groups 2 and 3 compared to group 1: the rats gain weight faster in groups 2 and 3 compared to group 1.
+
+Compare the random intercept and random slope model to the random intercept and random slope with *Time* and *Weight* interaction using anova: 
+```{r}
+# perform an ANOVA test on the two models
+anova(RATS_ref2, RATS_ref1)
+
+```
+The model with *Time* and *Weight* interaction seems to fit the data better based on the smaller log-likelihood of the model. And the difference is statistically significant.
+
+Finally, visualize the observed weights and the fitted values for weight from the last model:
+```{r}
+# draw the plot of RATSL with the observed Weight values
+ggplot(RATSL, aes(x = Time, y = Weight, group = ID)) +
+  geom_line(aes(linetype = Group)) +
+  scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 20)) +
+  scale_y_continuous(name = "Observed weight (grams)") +
+  theme(legend.position = "top")
+
+# Create a vector of the fitted values
+Fitted <- fitted(RATS_ref2)
+
+# Create a new column fitted to RATSL
+RATSL <- mutate(RATSL, Fitted=Fitted)
+
+# draw the plot of RATSL with the Fitted values of weight
+ggplot(RATSL, aes(x = Time, y = Fitted, group = ID)) +
+  geom_line(aes(linetype = Group)) +
+  scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 20)) +
+  scale_y_continuous(name = "Fitted weight (grams)") +
+  theme(legend.position = "top")
+
+```
